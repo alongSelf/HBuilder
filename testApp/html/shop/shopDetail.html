@@ -1,0 +1,204 @@
+<!--
+	作者：Trust
+	时间：2015-12-19
+	描述：商品列表
+-->
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<title>商品列表</title>
+		<link href="../../css/mui.min.css" rel="stylesheet" />
+		<style type="text/css">
+			.mui-numbox {
+				position: absolute;
+				right: 5px;
+				top: 15px;
+			}
+			
+			.mui-bar-tab .mui-tab-item.mui-active {
+				color: #929292;
+			}
+			
+			.mui-tab-item:first-child {
+				border-right: 1px solid grey;
+			}
+		</style>
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+			<h1 class="mui-title">商家</h1>
+		</header>
+		<!--底部栏-->
+		<nav class="mui-bar mui-bar-tab">
+			<a class="mui-tab-item mui-active">
+				<span>￥</span><span id="totalPrice">0.00</span>
+			</a>
+			<a class="mui-tab-item" id="settlement">
+				选好了
+			</a>
+		</nav>
+		<div class="mui-content">
+			<!--商品列表-->
+			<ul class="mui-table-view" id="goodsList">
+				<!--<li class="mui-table-view-cell mui-media">
+					<a href="javascript:;">
+						<img class="mui-media-object mui-pull-left" src="">
+						<div class="mui-media-body">
+							<span>商品名</span>
+							<div class="mui-numbox" data-numbox-step="1" data-numbox-min="0" data-numbox-max="10">
+								<button class="mui-btn mui-btn-numbox-minus" type="button">-</button>
+								<input class="mui-input-numbox" value="0" readonly="readonly" type="number">
+								<button class="mui-btn mui-btn-numbox-plus" type="button">+</button>
+							</div>
+							<p class="mui-ellipsis">商品价格</p>
+						</div>
+					</a>
+				</li>-->
+			</ul>
+		</div>
+		<script src="../../js/mui.min.js"></script>
+		<script type="text/javascript" charset="utf-8">
+			mui.init();
+			mui.plusReady(function() {
+				/**
+				 * 获取当前窗口对象，并获取上一级传递过来的shopId
+				 * http://www.html5plus.org/doc/zh_cn/webview.html#plus.webview.currentWebview
+				 * http://ask.dcloud.net.cn/docs#http://ask.dcloud.net.cn/article/63
+				 * 实际项目中是根据shopId这个参数向后台发起请求，来获取对应的产品信息
+				 * 这里是本地json请求，我就简单将头部替换一下，来表示展示的是不同的商家的信息
+				 */
+				var self = plus.webview.currentWebview();
+				var shopId = self.shopId;
+				var title = document.querySelector(".mui-title");
+				title.innerHTML += shopId;
+				getProductList(shopId);
+				document.getElementById("settlement").addEventListener("tap", function() {
+					// 首先判定用户是否登录
+					var userInfo = plus.storage.getItem("userInfo");
+					if (!userInfo) {
+						// http://www.html5plus.org/doc/zh_cn/nativeui.html#plus.nativeUI.confirm
+						plus.nativeUI.confirm("您还未登录，是否登录？", function(event) {
+							if (event.index == 0) {
+								mui.openWindow({
+									url: "../account/login.html",
+									id: "login",
+									waiting: {
+										autoShow: false
+									},
+									extras: {
+										entrance: "shop"
+									}
+								});
+							}
+						}, "", ["现在就去", "我不买了"]);
+						return;
+					}
+					var totalPrice = document.getElementById("totalPrice").innerHTML;
+					// 判定用户是否选择了商品
+					if (totalPrice == "0.00") {
+						plus.nativeUI.toast("请选择商品");
+						return;
+					} else {
+						settlementPrice(totalPrice);
+					}
+				});
+			});
+
+			function getProductList(shopId) { //获取商品列表
+				mui.ajax({
+					url: "../../json/shop/shopDetail.json",
+					type: "get",
+					async: true,
+					data: {
+						shopId: shopId
+					},
+					dataType: "json",
+					timeout: 1000,
+					success: function(data) {
+						var result = data.result;
+						var productList = document.getElementById("goodsList");
+						var content = "";
+						for (var i = 0, len = result.length; i < len; i++) {
+							// 将单个商品对象序列化后，存在data-detail属性中，后面传参用
+							var productDetail = JSON.stringify(result[i]);
+							// 第一行采用双引号包裹，是因为对象序列化以后，里面采用的是""，如果data-detail属性外面依旧用""，转义会出问题
+							content += "<li class='mui-table-view-cell mui-media' data-detail='" + productDetail + "'>" +
+								'<a href="javascript:;"><img class="mui-media-object mui-pull-left" src="' + result[i].productImage + '">' +
+								'<div class="mui-media-body"><span>' + result[i].productName + '</span>' +
+								'<div class="mui-numbox" data-numbox-step="1" data-numbox-min="0" data-numbox-max="10">' +
+								'<button class="mui-btn mui-btn-numbox-minus" type="button">-</button>' +
+								/* 这里有一个data-value这个属性，作为一个中间量来判定商品的增减，初始化为0
+								 * data-price自定义属性，用来隐式得存储商品价格
+								 */
+								'<input class="mui-input-numbox" value="0" readonly="readonly" type="number" data-price="' + result[i].productPrice + '" data-value="0">' +
+								'<button class="mui-btn mui-btn-numbox-plus" type="button">+</button>' +
+								'</div><p class="mui-ellipsis">' + result[i].productPrice + '</p></div></a></li>';
+						}
+						productList.innerHTML = content;
+						// 由于我们的numbox控件是动态拼接，所以拼接后要激活控件
+						mui(".mui-numbox").numbox();
+						// 我们通过设置中间量来实现计算总价
+						checkGoods();
+					},
+					error: function(xhr, type, errorThrown) {
+						plus.nativeUI.toast(errorThrown);
+					}
+				});
+			}
+
+			function checkGoods() { //计算总价
+				var totalPrice = document.getElementById("totalPrice");
+				var numbers = document.getElementsByClassName("mui-input-numbox");
+				for (var i = 0, len = numbers.length; i < len; i++) {
+					numbers[i].addEventListener("change", function() {
+						var currentPrice = this.getAttribute("data-price");
+						// 记得将string类型转换为number类型，再做比较
+						var currentNum = parseInt(this.value);
+						var tmpNum = parseInt(this.getAttribute("data-value"));
+						// 计算出结果后，最后的结果用toFixed()方法，保留小数点后2位数
+						if (currentNum > tmpNum) {
+							totalPrice.innerHTML = (parseFloat(totalPrice.innerHTML) + parseFloat(currentPrice)).toFixed(2);
+						} else {
+							totalPrice.innerHTML = (parseFloat(totalPrice.innerHTML) - parseFloat(currentPrice)).toFixed(2);
+						}
+						// 每次计算完总价后，替换中间量的值，以便下次进行比较
+						this.setAttribute("data-value", currentNum);
+					});
+				}
+			}
+
+			function settlementPrice(totalPrice) { //结算
+				var numbers = document.getElementsByClassName("mui-input-numbox");
+				var list = document.getElementsByClassName("mui-media");
+				var productArray = [];
+				for (var i = 0, len = numbers.length; i < len; i++) {
+					// 将所有个数不为0的商品信息，添加到数组中
+					if (numbers[i].value != "0") {
+						var productDetail = list[i].getAttribute("data-detail");
+						var productObj = JSON.parse(productDetail);
+						// 将商品的数量添加到商品对象中
+						productObj["productNum"] = numbers[i].value;
+						productArray.push(productObj);
+					}
+				}
+				mui.openWindow({
+					url: "../order/userOrder.html",
+					id: "userOrder",
+					waiting: {
+						autoShow: false
+					},
+					extras: {
+						productList: productArray,
+						totalPrice: totalPrice
+					}//将商品列表信息和总价格，一起传递到下一个窗口
+				});
+			}
+		</script>
+	</body>
+
+</html>

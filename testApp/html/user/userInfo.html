@@ -1,0 +1,152 @@
+<!--
+	作者：Trust
+	时间：2015-12-21
+	描述：用户资料
+-->
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<title>用户资料</title>
+		<link href="../../css/mui.min.css" rel="stylesheet" />
+		<style type="text/css">
+			#edit {
+				color: red;
+				margin-top: 10px;
+			}
+		</style>
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+			<a class="mui-pull-right" id="edit">修改</a>
+			<h1 class="mui-title">我的资料</h1>
+		</header>
+		<div class="mui-content">
+			<ul class="mui-table-view">
+				<li class="mui-table-view-cell mui-media">
+					<a href="javascript:;">
+						<img class="mui-media-object mui-pull-right" id="uimg" src="">
+						<div class="mui-media-body">
+							<span id="uname"></span>
+							<p class="mui-ellipsis" id="uid"></p>
+						</div>
+					</a>
+				</li>
+				<li class="mui-table-view-cell">
+					性别<span class="mui-pull-right" id="usex"></span>
+				</li>
+				<li class="mui-table-view-cell">
+					自我介绍<span class="mui-pull-right" id="udesc"></span>
+				</li>
+				<li class="mui-table-view-cell">
+					学校<span class="mui-pull-right" id="uschool"></span>
+				</li>
+				<li class="mui-table-view-cell">
+					班级<span class="mui-pull-right" id="uclass"></span>
+				</li>
+				<li class="mui-table-view-cell">
+					专业<span class="mui-pull-right" id="umajor"></span>
+				</li>
+			</ul>
+		</div>
+		<script src="../../js/mui.min.js"></script>
+		<script type="text/javascript" charset="utf-8">
+			mui.init();
+			mui.plusReady(function() {
+				/*
+				 * 从本地缓存中获取用户标识
+				 * 这里只存了用户的id，实际项目中可以同时存储id和token
+				 * 或者你们有更好的更安全的方式，都是可以的
+				 * http://www.html5plus.org/doc/zh_cn/storage.html#plus.storage.getItem
+				 */
+				var userInfo = plus.storage.getItem("userInfo");
+				var user = JSON.parse(userInfo);
+				var userId = user.userid;
+				/*
+				 * ajax获取的参数几种常见的情况，但是通常我们都采用json格式的字符串来进行数据交互
+				 * http://dev.dcloud.net.cn/mui/ajax/
+				 * 1、实际要获取的参数是一个数组，数组中是n组数据，也就是商家以及商品列表部分那种
+				 * 2、实际要获取的只是一组数据，就类似某个用户的信息
+				 * 3、向后台发起增删改等操作，后台返回操作成功与否的参数，我们再根据这个参数来进行下一步的操作
+				 * 年底了，有些东西搞的太匆忙，写的有些丑，大家见谅，作为新人我也在不断学习
+				 */
+				mui.ajax({
+					type: "get", //请求方式，这里本地json用的是get方式
+					url: "../../json/user/userInfo.json", //接口地址，实际项目中这里填写后台给你的接口地址
+					async: true, //异步，默认是true
+					data: {
+						userId: userId
+					}, //传递的参数，属性名值对的形式
+					dataType: "json", //预计返回的数据格式，默认是json
+					timeout: 1000, //请求超时时间
+					/*
+					 * 请求成功的回调函数，我们在这里处理从后台获取的参数
+					 * 由于ajax默认是异步的，所以在调用多个ajax的时候，自己要注意执行的顺序
+					 */
+					success: function(data) {
+						/*
+						 * 成功获取到用户相关信息后，替换各个节点的内容
+						 */
+						if (data.status == "1") {
+							var result = data.result;
+							document.getElementById("uid").innerHTML = result.userid;
+							document.getElementById("uname").innerHTML = result.uname;
+							document.getElementById("uimg").src = result.uimage;
+							if (result.usex == "1") {
+								document.getElementById("usex").innerHTML = "男";
+							} else {
+								document.getElementById("usex").innerHTML = "女";
+							}
+							document.getElementById("udesc").innerHTML = result.udesc;
+							document.getElementById("uschool").innerHTML = result.uschool;
+							document.getElementById("uclass").innerHTML = result.uclass;
+							document.getElementById("umajor").innerHTML = result.umajor;
+							// 右上角的修改事件
+							document.getElementById("edit").addEventListener("tap", function() {
+								mui.openWindow({
+									url: "editUserInfo.html",
+									id: "editUserInfo",
+									waiting: {
+										autoShow: false
+									},
+									extras: {
+										result: result
+									} //其实这个主要是为了演示，子页面如何获取对父页面传的值
+								});
+							});
+						}
+					},
+					/*
+					 * 请求失败的回调，这里处理ajax请求失败的情况
+					 * 这里只是简单做一个提示，具体项目中根据自己的场景和业务做出合理的处理
+					 */
+					error: function(xhr, type, errorThrown) {
+						plus.nativeUI.toast(errorThrown);
+					}
+				});
+				/*
+				 * 这里单独对头像上传进行处理
+				 * 实际项目中，根据实际设计情况进行处理
+				 * 单独处理的目的，主要是为了介绍下调用相册以及摄像头的问题
+				 */
+				document.getElementById("uimg").addEventListener("tap", function() {
+					mui.openWindow({
+						url: "userHead.html",
+						id: "userHead",
+						waiting: {
+							autoShow: false
+						},
+						extras: {
+							uimage: this.src
+						}
+					});
+				});
+			});
+		</script>
+	</body>
+
+</html>

@@ -1,0 +1,43 @@
+<!--
+	作者：Trust
+	时间：2015-12-18
+	描述：APP入口
+-->
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<title>入口页面</title>
+		<link href="css/mui.min.css" rel="stylesheet" />
+	</head>
+
+	<body>
+		<script src="js/mui.min.js"></script>
+		<script type="text/javascript" charset="utf-8">
+			/**
+			 * 该页面作为空白的入口页面
+			 * 其意义在于，我们可以在这个页面进行一些隐式的操作
+			 * 例如：判定用户是否第一次登录，来跳转至引导页或直接进入APP
+			 * 从本地存储中获取用户信息，进行用户的自动登录
+			 * 在该页面判定完成后，跳转的目标页面，我们可以手动关闭启动界面，用户是看不到这个空白页的
+			 */
+			mui.init();
+			mui.plusReady(function() {
+				/**
+				 * 由于时间关系，以后会对这个进行补充
+				 * 这里假设我进行了判定，我跳转到主窗口
+				 */
+				mui.openWindow({
+					url: "html/main/home.html",
+					id: "home",
+					waiting: {
+						autoShow: false
+					}
+				});
+			});
+		</script>
+	</body>
+
+</html>

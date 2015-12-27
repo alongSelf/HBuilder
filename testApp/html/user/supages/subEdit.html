@@ -1,0 +1,60 @@
+<!--
+	作者：1323424056@qq.com
+	时间：2015-12-26
+	描述：修改用户资料子页面
+-->
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<title>修改用户资料子页面</title>
+		<link href="../../../css/mui.min.css" rel="stylesheet" />
+	</head>
+
+	<body>
+		<div class="mui-content">
+			<form class="mui-input-group">
+				<div class="mui-input-row">
+					<label>性别：</label>
+					<input class="mui-input-clear" id="usex" type="text">
+				</div>
+				<div class="mui-input-row">
+					<label>学校：</label>
+					<input class="mui-input-clear" id="uschool" type="text">
+				</div>
+				<div class="mui-input-row">
+					<label>地址：</label>
+					<input class="mui-input-clear" id="uaddress" type="text">
+				</div>
+				<div class="mui-button-row">
+					<!--这里一定要注意，之前忘记提了，form表单中的button一定要加type="button"，默认是submit
+					http://ask.dcloud.net.cn/docs#http://ask.dcloud.net.cn/article/122-->
+					<button class="mui-btn mui-btn-blue" type="button">确认修改</button>
+				</div>
+			</form>
+		</div>
+		<script src="../../../js/mui.min.js"></script>
+		<script type="text/javascript" charset="utf-8">
+			mui.init();
+			mui.plusReady(function() {
+				var self = plus.webview.currentWebview();
+				/*
+				 * 这里我们可以直接获取到父窗口，获取之前传递到父窗口的值
+				 * http://www.html5plus.org/doc/zh_cn/webview.html#plus.webview.WebviewObject.parent
+				 */
+				var parent = self.parent();
+				var result = parent.result;
+				if (result.usex == "1") {
+					document.getElementById("usex").value = "男";
+				} else {
+					document.getElementById("usex").value = "女";
+				}
+				document.getElementById("uschool").value = result.uschool;
+				document.getElementById("uaddress").value = result.uaddress;
+			});
+		</script>
+	</body>
+
+</html>

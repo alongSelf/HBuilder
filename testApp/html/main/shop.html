@@ -1,0 +1,110 @@
+<!--
+	作者：Trust
+	时间：2015-12-18
+	描述：商家列表
+-->
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<title>商家</title>
+		<link href="../../css/mui.min.css" rel="stylesheet" />
+	</head>
+
+	<body>
+		<div class="mui-content">
+			<!--商家列表-->
+			<ul class="mui-table-view" id="shopList">
+				<!--<li class="mui-table-view-cell mui-media">
+					<a href="javascript:;"><img class="mui-media-object mui-pull-left" src="">
+						<div class="mui-media-body"><span>商家名称</span>
+							<p class="mui-ellipsis">商家简介</p>
+						</div>
+					</a>
+				</li>-->
+			</ul>
+		</div>
+		<script src="../../js/mui.min.js"></script>
+		<script type="text/javascript" charset="utf-8">
+			mui.init();
+			mui.plusReady(function() {
+				/**
+				 * 这里只有ajax的error部分调用plus相关的模块，是因为这个例子内容相对较少；
+				 * 实际项目中，在下除了函数部分，其它代码一般都是写在plusReady()里面的；
+				 * 只是防止有些地方会用到plus的模块，避免出现问题，个人习惯而已；
+				 */
+				getShopList();
+			});
+			/**
+			 * 获取商家列表
+			 * 函数的意义在于复用，在实际应用中，许多我们需要做上拉和下拉操作，这里由于时间关系暂时不做咯；
+			 */
+			function getShopList() {
+				/**
+				 * 这里ajax请求的是一个本地json文件
+				 * 实际项目调用接口只需要将url地址替换成接口地址即可
+				 * http://dev.dcloud.net.cn/mui/ajax/
+				 */
+				mui.ajax({
+					url: "../../json/main/shop.json",
+					type: "get",
+					async: true,
+					data: {},
+					dataType: "json",
+					timeout: 1000,
+					success: function(data) {
+						var result = data.result;
+						var shopList = document.getElementById("shopList");
+						// 这里我们用的是拼接字符串的方式来动态拼接html部分
+						var content = "";
+						for (var i = 0, len = result.length; i < len; i++) {
+							content += '<li class="mui-table-view-cell mui-media" data-id="' + result[i].shopId + '">' +
+								'<a href="javascript:;"><img class="mui-media-object mui-pull-left" src="' + result[i].shopImage + '">' +
+								'<div class="mui-media-body"><span>' + result[i].shopName + '</span>' +
+								'<p class="mui-ellipsis">' + result[i].shopDescription + '</p></div></a></li>';
+						}
+						shopList.innerHTML = content;
+						// 由于我们是异步执行，所以在html部分拼接完成之后，才能对其进行添加点击事件的操作；
+						gotoShopDetail();
+					},
+					error: function(xhr, type, errorThrown) {
+						plus.nativeUI.toast(errorThrown);
+					}
+				});
+			}
+			// 遍历商家列表节点，添加点击事件
+			function gotoShopDetail() {
+				var list = document.getElementsByClassName("mui-table-view-cell");
+				var shopId = "";
+				for (var i = 0, len = list.length; i < len; i++) {
+					list[i].addEventListener("tap", function() {
+						shopId = this.getAttribute("data-id");
+						/**
+						 * 设置等待框不打开，为了调试方便；
+						 * 实际项目中，可能需要打开等待框来等数据加载完毕，再展示目标页面；
+						 * http://dev.dcloud.net.cn/mui/window/#openwindow
+						 */
+						mui.openWindow({
+							url: "../shop/shopDetail.html",
+							id: "shopDetail",
+							waiting: {
+								autoShow: false
+							},
+							/**
+							 * 在实际项目中，我们商店的详情，肯定是共用的一张页面；
+							 * 这里传的商店编码shopId，就是为了在目标页面，通过该shopId来获取对应商店的信息；
+							 * 从而实现，点击不同的商店选项，会展示不同的商店对应的详情信息；
+							 */
+							extras: {
+								shopId: shopId
+							}
+						});
+					});
+				}
+			}
+		</script>
+	</body>
+
+</html>

@@ -1,0 +1,136 @@
+<!--
+	作者：Trust
+	时间：2015-12-18
+	描述：订单列表
+-->
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<title>订单</title>
+		<link href="../../css/mui.min.css" rel="stylesheet" />
+	</head>
+
+	<body>
+		<div class="mui-content mui-scroll-wrapper" id="refreshContainer">
+			<div class="mui-scroll">
+				<ul class="mui-table-view" id="orderList">
+					<!--<li class="mui-table-view-cell mui-media">
+						<a href="javascript:;">
+							<div class="mui-media-body">
+								<span>订单01</span>
+								<p class="mui-ellipsis">2015-12-18</p>
+							</div>
+						</a>
+					</li>-->
+				</ul>
+			</div>
+		</div>
+		<script src="../../js/mui.min.js"></script>
+		<script type="text/javascript" charset="utf-8">
+			/**
+			 * 初始化配置刷新的参数
+			 * http://dev.dcloud.net.cn/mui/pulldown/
+			 * http://dev.dcloud.net.cn/mui/pullup/
+			 */
+			mui.init({
+				pullRefresh: {
+					container: "#refreshContainer",
+					down: {
+						callback: pulldownRefresh
+					},
+					up: {
+						callback: pullupGetMore
+					}
+				}
+			});
+			mui.plusReady(function() {
+				var isLogin = plus.storage.getItem("userInfo");
+				if (isLogin) {
+					var user = JSON.parse(isLogin);
+					var uid = user.userid;
+					getOrderList(uid);
+				}
+			});
+			/**
+			 * 这个函数用来读取用户的订单信息
+			 * 当然，执行这个函数的前提是，用户已经登录了
+			 */
+			function getOrderList(uid) {
+				mui.ajax({
+					url: "../../json/main/order.json",
+					type: "get",
+					async: true,
+					data: {
+						userid: uid
+					},
+					dataType: "json",
+					success: function(data) {
+						var result = data.result;
+						var userOrder = document.getElementById("orderList");
+						var content = "";
+						for (var i = 0, len = result.length; i < len; i++) {
+							content += '<li class="mui-table-view-cell mui-media" data-id="' + result[i].orderId + '">' +
+								'<a href="javascript:;"><div class="mui-media-body">' +
+								'<span>' + result[i].orderName + '</span><p class="mui-ellipsis">' + result[i].orderTotalPrice + '</p></div></a></li>';
+						}
+						userOrder.innerHTML = content;
+					},
+					error: function(xhr, type, errorThrown) {
+						console.log(errorThrown);
+					}
+				});
+			}
+			/**
+			 * 设置三个参数
+			 * page用来额外数据的页数
+			 * totalPage是存储额外的数据一共有多少页
+			 * list用来存储列表项的外部容器
+			 */
+			var page = 1;
+			var totalPage = 5;
+			var orderList = document.getElementById("orderList");
+
+			function pulldownRefresh() { //下拉刷新函数
+				var content = "";
+				for (var i = 0; i < 20; i++) {
+					content += '<li class="mui-table-view-cell"><a class="mui-navigate-right">Item下拉刷新' + (i + 1) + '</a></li>';
+				}
+				orderList.innerHTML = content;
+				setTimeout(function() {
+					/**
+					 * 下拉刷新结束
+					 * http://dev.dcloud.net.cn/mui/pulldown/
+					 */
+					mui("#refreshContainer").pullRefresh().endPulldownToRefresh();
+					// 重置上拉刷新，以及页数
+					mui("#refreshContainer").pullRefresh().enablePullupToRefresh();
+					page = 1;
+				}, 1500);
+			}
+
+			function pullupGetMore() { //上拉加载函数
+				if (page > 5) {
+					/**
+					 * 没有更多数据，结束上拉加载
+					 * http://dev.dcloud.net.cn/mui/pullup/
+					 */
+					mui("#refreshContainer").pullRefresh().endPullupToRefresh(true);
+					return;
+				}
+				var content = "";
+				for (var i = 0; i < 5; i++) {
+					content += '<li class="mui-table-view-cell"><a class="mui-navigate-right">上拉加载第' + page + '次' + (i + 1) + '</a></li>';
+				}
+				orderList.innerHTML += content;
+				page++;
+				setTimeout(function() {
+					mui("#refreshContainer").pullRefresh().endPullupToRefresh();
+				}, 1000);
+			}
+		</script>
+	</body>
+
+</html>

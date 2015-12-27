@@ -1,0 +1,183 @@
+<!--
+	作者：Trust
+	时间：2015-12-26
+	描述：用户上传头像
+-->
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<title>用户上传头像</title>
+		<link href="../../css/mui.min.css" rel="stylesheet" />
+		<style type="text/css">
+			img {
+				height: 200px;
+				width: 200px;
+				margin-top: 100px;
+			}
+			
+			.mui-btn-block {
+				width: 60%;
+				border: none;
+				margin-top: 20px;
+				left: 20%;
+			}
+		</style>
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+			<h1 class="mui-title">用户头像</h1>
+		</header>
+		<div class="mui-content" style="text-align: center;">
+			<img id="uimg" src="" />
+			<button class="mui-btn mui-btn-blue mui-btn-block" id="uploadImage" type="button">上传头像</button>
+		</div>
+		<script src="../../js/mui.min.js"></script>
+		<script type="text/javascript" charset="utf-8">
+			mui.init();
+			mui.plusReady(function() {
+				// 首先展示之前的头像
+				var self = plus.webview.currentWebview();
+				var oldImg = self.uimage;
+				var userImage = document.getElementById("uimg");
+				userImage.src = oldImg;
+				userImage.addEventListener("tap", showActionSheet);
+				// 上传图片
+				document.getElementById("uploadImage").addEventListener("tap", function() {
+					// http://www.html5plus.org/doc/zh_cn/uploader.html#plus.uploader.createUpload
+					var task = plus.uploader.createUpload("上传文件的目标地址，也就是你的上传接口", {
+						method: "post",
+						timeout: 300
+					}, function(upload, status) {
+						// http://www.html5plus.org/doc/zh_cn/uploader.html#plus.uploader.UploadCompletedCallback
+						if (status == 200) {
+							/*
+							 * 服务端返回的参数
+							 * http://www.html5plus.org/doc/zh_cn/uploader.html#plus.uploader.Upload
+							 * 这个参数通常是服务端文件存放的地址，然后将这个地址，再调用其它接口，存放至数据库
+							 */
+							var imageUrl = upload.responseText;
+							var userInfo = plus.storage.getItem("userInfo");
+							var user = JSON.parse(userInfo);
+							var userId = user.userid;
+							// 调用修改信息的接口
+							updateUserInfo(userId, imageUrl);
+						}
+					});
+					// http://www.html5plus.org/doc/zh_cn/uploader.html#plus.uploader.Upload.addFile
+					task.addFile("这里写文件在服务端存放的地址，具体的和后台商量", {
+						key: "文件标识",
+						name: "文件名称"
+					});
+					// http://www.html5plus.org/doc/zh_cn/uploader.html#plus.uploader.Upload.addData
+					task.addData("添加的参数名", "添加的参数的值");
+					// http://www.html5plus.org/doc/zh_cn/uploader.html#plus.uploader.Upload.start
+					task.start();
+				});
+			});
+			
+			// 选择照片
+			function showActionSheet() {
+				/**
+				 * 这里可以用mui提供的popover弹出控件，也可以用系统原生的弹出控件
+				 * 个人比较喜欢用原生的控件，如果你想做得漂亮点的话，那么你就使用popover咯
+				 * 使用popover的话，调用相册和摄像头，你就分别对popover的节点添加事件就好了
+				 * http://www.html5plus.org/doc/zh_cn/nativeui.html#plus.nativeUI.actionSheet
+				 */
+				plus.nativeUI.actionSheet({
+						cancel: "取消",
+						buttons: [{
+							title: "从相册选择"
+						}, {
+							title: "拍照"
+						}]
+					},
+					function(event) {
+						/*
+						 * 根据文档所讲，取消键为0
+						 * 其它键的所引致从1开始计算
+						 */
+						if (event.index == 1) {
+							getGallery();
+						} else if (event.index == 2) {
+							getCamera();
+						}
+					}
+				);
+			}
+			
+			/*
+			 * 调用系统相册
+			 * http://www.html5plus.org/doc/zh_cn/gallery.html#plus.gallery.pick
+			 */
+			function getGallery() {
+				plus.gallery.pick(function(path) {
+					document.getElementById("uimg").src = path;
+				}, function(e) {
+					console.log("取消选择图片");
+				}, {
+					filename: "_doc/gallery/", //我是根据文档写的
+					filter: "image"
+				});
+			}
+			
+			// 调用系统摄像头
+			function getCamera() {
+				// http://www.html5plus.org/doc/zh_cn/camera.html#plus.camera.getCamera
+				var cmr = plus.camera.getCamera();
+				/*
+				 * camera对象进行拍照的方法
+				 * http://www.html5plus.org/doc/zh_cn/camera.html#plus.camera.Camera.captureImage
+				 */
+				cmr.captureImage(function(path) {
+					/**
+					 * 拍照成功后，图片本保存在本地，这时候我们需要调用本地文件
+					 * http://www.html5plus.org/doc/zh_cn/io.html#plus.io.resolveLocalFileSystemURL
+					 */
+					plus.io.resolveLocalFileSystemURL(path, function(entry) {
+						/*
+						 * 将获取目录路径转换为本地路径URL地址
+						 * http://www.html5plus.org/doc/zh_cn/io.html#plus.io.DirectoryEntry.toLocalURL
+						 */
+						document.getElementById("uimg").src = entry.toLocalURL();
+					});
+				}, function(error) {
+					console.log(error.message);
+				}, {
+					filename: "_doc/camera/", //我是根据文档写的
+					index: 1 //ios指定主摄像头
+				});
+			}
+			
+			/*
+			 * 上传用户信息
+			 * 实际项目中，上传头像你可以单独上传，也可以和其它用户信息一起上传
+			 * 无论你的图片到底是存在哪里，数据里里面总要存储一下文件的路径的
+			 * 所以，我们在上传文件后，将文件的路径录入数据库中
+			 */
+			function updateUserInfo(uid, uimg) {
+				mui.ajax({
+					type: "get", //请求方式看你们实际项目用get或者post都行
+					url: "修改用户头像/信息的那个接口地址",
+					data: {
+						userId: uid,
+						userImage: uimg
+					},
+					dataType: "json",
+					timeout: 1000,
+					success: function(data) {
+						// 修改成功后，后台返回一个参数，根据参数来继续执行后面的逻辑
+					},
+					error: function(xhr, type, errorThrown) {
+						plus.nativeUI.toast(errorThrown);
+					}
+				});
+			}
+		</script>
+	</body>
+
+</html>

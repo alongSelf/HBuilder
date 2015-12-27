@@ -1,0 +1,16 @@
+{
+	"status": "1",
+	"message": "获取用户资料成功",
+	"result": {
+		"userid": "111111",
+		"uname": "二货Trust",
+		"uphone": "12345678901",
+		"uaddress": "新华街新华小区二号楼222室",
+		"uimage": "../../image/head.jpg",
+		"usex": 1,
+		"udesc": "我是一个快乐的小逗比",
+		"uschool": "农业大学",
+		"uclass": "2班",
+		"umajor": "玩游戏"
+	}
+}

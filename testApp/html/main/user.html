@@ -1,0 +1,118 @@
+<!--
+	作者：Trust
+	时间：2015-12-21
+	描述：用户模块
+-->
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<title>我的</title>
+		<link href="../../css/mui.min.css" rel="stylesheet" />
+	</head>
+
+	<body>
+		<div class="mui-content">
+			<ul class="mui-table-view">
+				<!--用户信息-->
+				<li class="mui-table-view-cell mui-media" id="uinfo">
+					<a href="javascript:;">
+						<img class="mui-media-object mui-pull-right" id="uimg" src="../../image/shop03.jpg">
+						<div class="mui-media-body">
+							<span id="uname">未知</span>
+							<p class="mui-ellipsis" id="uid">点我登录</p>
+						</div>
+					</a>
+				</li>
+				<!--其它选项-->
+				<li class="mui-table-view-cell">
+					<a class="mui-navigate-right" href="javascript:;">关于软件</a>
+				</li>
+				<li class="mui-table-view-cell">
+					<a class="mui-navigate-right" href="javascript:;">帮助手册</a>
+				</li>
+				<li class="mui-table-view-cell">
+					<a class="mui-navigate-right" href="javascript:;">版本更新</a>
+				</li>
+			</ul>
+		</div>
+		<script src="../../js/mui.min.js"></script>
+		<script type="text/javascript" charset="utf-8">
+			mui.init();
+			var userName = document.getElementById("uname");
+			var userId = document.getElementById("uid");
+			var userImage = document.getElementById("uimg");
+			var isLogin = "";
+			mui.plusReady(function() {
+				/**
+				 * 从本地存储中获取用户登录信息
+				 * http://www.html5plus.org/doc/zh_cn/storage.html#plus.storage.getItem
+				 */
+				isLogin = plus.storage.getItem("userInfo");
+				/**
+				 * 如果用户以登录，那么替换用户信息；
+				 * 关于if(isLogin)这种直接写一个变量的写法
+				 * http://blog.csdn.net/gulingeagle/article/details/8757039
+				 */
+				if (isLogin) {
+					/**
+					 * 本地存储中存储的值是一个json字符串，需要用JSON.parse()方法进行发序列化，转换为对象；
+					 * http://www.jb51.net/article/51331.htm
+					 */
+					var user = JSON.parse(isLogin);
+					userName.innerHTML = user.uname;
+					userId.innerHTML = user.userid;
+					userImage.src = user.uimage;
+				}
+				/**
+				 * 点击用户信息栏
+				 * 判定是否登录，如果登录那么跳转至用户信息页面；
+				 * 如果未登录，那么跳转至登录页面；
+				 */
+				document.getElementById("uinfo").addEventListener("tap", function() {
+					if (isLogin) {
+						mui.openWindow({
+							url: "../user/userInfo.html",
+							id: "userInfo",
+							waiting: {
+								autoShow: false
+							}
+						});
+					} else {
+						mui.openWindow({
+							url: "../account/login.html",
+							id: "login",
+							waiting: {
+								autoShow: false
+							},
+							extras: {
+								entrance: "user"
+							}
+						});
+					}
+				});
+			});
+			// 自定义事件，在登录后替换用户信息；
+			window.addEventListener("userLogin", function(event) {
+				isLogin = plus.storage.getItem("userInfo");
+				/**
+				 * event.detail里面可以获取到传递过来的值
+				 * http://dev.dcloud.net.cn/mui/event/#customevent
+				 */
+				userName.innerHTML = event.detail.userName;
+				userId.innerHTML = event.detail.userId;
+				userImage.src = event.detail.userImage;
+				/**
+				 * 替换完成后，关闭等待框，延时0.5秒后关闭登录页面；
+				 * http://www.html5plus.org/doc/zh_cn/nativeui.html#plus.nativeUI.closeWaiting
+				 * http://www.html5plus.org/doc/zh_cn/webview.html#plus.webview.close
+				 */
+				plus.nativeUI.closeWaiting();
+				plus.webview.close("login", "slide-out-right", 500);
+			});
+		</script>
+	</body>
+
+</html>

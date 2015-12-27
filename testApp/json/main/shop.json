@@ -1,0 +1,27 @@
+{
+	"status": "1",
+	"message": "请求商家列表成功",
+	"result": [
+		{
+			"shopId": 1,
+			"shopName": "商店01",
+			"shopDescription": "这是商店01",
+			"shopImage": "../../image/shop01.jpg"
+		}, {
+			"shopId": 2,
+			"shopName": "商店02",
+			"shopDescription": "这是商店02",
+			"shopImage": "../../image/shop02.jpg"
+		}, {
+			"shopId": 3,
+			"shopName": "商店03",
+			"shopDescription": "这是商店03",
+			"shopImage": "../../image/shop03.jpg"
+		}, {
+			"shopId": 4,
+			"shopName": "商店04",
+			"shopDescription": "这是商店04",
+			"shopImage": "../../image/shop04.jpg"
+		}
+	]
+}

@@ -1,0 +1,145 @@
+<!--
+	作者：Trust
+	时间：2015-12-18
+	描述：首页主窗口
+-->
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<title>首页</title>
+		<link href="../../css/mui.min.css" rel="stylesheet" />
+	</head>
+
+	<body>
+		<!--顶部栏-->
+		<header class="mui-bar mui-bar-nav">
+			<h1 class="mui-title">商家</h1>
+		</header>
+		<!--底部选项栏-->
+		<nav class="mui-bar mui-bar-tab">
+			<!--data-xx这种自定义属性的写法，用于存放一些数据，这里我们用来存放子窗口的相对地址-->
+			<!--http://www.cnblogs.com/dolphinX/p/3348458.html-->
+			<a class="mui-tab-item mui-active" data-href="shop.html">
+				<span class="mui-icon mui-icon-home"></span>
+				<span class="mui-tab-label">商家</span>
+			</a>
+			<a class="mui-tab-item" data-href="order.html">
+				<span class="mui-icon mui-icon-email"></span>
+				<span class="mui-tab-label">订单</span>
+			</a>
+			<a class="mui-tab-item" data-href="user.html">
+				<span class="mui-icon mui-icon-person"></span>
+				<span class="mui-tab-label">我的</span>
+			</a>
+		</nav>
+		<script src="../../js/mui.min.js"></script>
+		<script type="text/javascript" charset="utf-8">
+			/**
+			 * 首先附上webview选项卡切换的官方例子的地址
+			 * Hello Mui示例代码中examples/tab-webview-main.html
+			 * 官方例子中窗口切换部分的mui.extend()，在下没有看懂；
+			 * 所以自己写的相对简单些，如果哪位朋友读懂了，希望可以为在下解答一下；
+			 */
+			mui.init();
+			mui.plusReady(function() {
+				/**
+				 * 获取当前窗口对象
+				 * http://www.html5plus.org/doc/zh_cn/webview.html#plus.webview.currentWebview
+				 */
+				var main = plus.webview.currentWebview();
+				/**
+				 * 隐藏入口页面，有时候我们做webview模式的侧滑，上一级的页面会影响侧滑页的zindex；
+				 * http://www.html5plus.org/doc/zh_cn/webview.html#plus.webview.WebviewObject.opener
+				 * http://www.html5plus.org/doc/zh_cn/webview.html#plus.webview.WebviewObject.hide
+				 */
+				main.opener().hide("none");
+				/**
+				 * 获取顶部栏的文本节点
+				 * 关于querySelector()和querySelectorAll()
+				 * http://www.cnblogs.com/Wayou/p/html5_web_api_queryselector.html
+				 */
+				var title = document.querySelector(".mui-title");
+				// 将子窗口的地址存在数组中，方便进行遍历，创建子窗口；
+				var subpageArr = ["shop.html", "order.html", "user.html"];
+				/**
+				 * 设置子窗口的样式，顶部默认44px，底部默认50px，并且设置窗口无滚动条；
+				 * http://www.html5plus.org/doc/zh_cn/webview.html#plus.webview.WebviewStyle
+				 */
+				var subStyles = {
+					top: "45px",
+					bottom: "50px",
+					scrollIndicator: "none"
+				};
+				// 生成三个子窗口，并添加至主窗口；
+				var subpage = null;
+				for (var i = 0, subLength = subpageArr.length; i < subLength; i++) {
+					// http://www.html5plus.org/doc/zh_cn/webview.html#plus.webview.create
+					// 这里将窗口id设置与窗口相对路径一致，方面下一步切换操作
+					subpage = plus.webview.create(subpageArr[i], subpageArr[i], subStyles);
+					/**
+					 * 除第一个子窗口外，其它子窗口均隐藏（无动画效果）；
+					 * 这里我们是直接获取的一个webviewObject，所以并不是调用webview的hide()方法，而是webviewObject的hide()方法；
+					 * http://www.html5plus.org/doc/zh_cn/webview.html#plus.webview.WebviewObject.hide
+					 */
+					if (i > 0) {
+						subpage.hide("none");
+					}
+					// http://www.html5plus.org/doc/zh_cn/webview.html#plus.webview.WebviewObject.append
+					main.append(subpage);
+				}
+				/**
+				 * 子页面切换
+				 */
+				var tabs = document.querySelectorAll(".mui-tab-item");
+				// 设置中间变量，用于存储当前处于展示状态窗口的标识（这里用的标识是窗口的相对地址），默认是第一个窗口；
+				var activeTab = subpageArr[0];
+				var targetTab = "";
+				for (var j = 0, tabLength = tabs.length; j < tabLength; j++) {
+					tabs[j].addEventListener("tap", function() {
+						// 获取当前点击的选项目标窗口的标识，比较所选项与处于展示状态窗口的标识进行对比；
+						targetTab = this.getAttribute("data-href");
+						if (targetTab === activeTab) {
+							return;
+						}
+						// 改变顶部栏的文字
+						title.innerHTML = this.querySelector(".mui-tab-label").innerHTML;
+						/**
+						 * 展示目标窗口，隐藏当前展示的窗口；
+						 * 这里要先展示，后隐藏，避免切换慢造成白屏；
+						 * http://www.html5plus.org/doc/zh_cn/webview.html#plus.webview.show
+						 * http://www.html5plus.org/doc/zh_cn/webview.html#plus.webview.hide
+						 */
+						plus.webview.show(targetTab, "fade-in", 300);
+						plus.webview.hide(activeTab);
+						// 将目标窗口，也就是现在处于展示状态窗口的标识，赋值给中间变量；
+						activeTab = targetTab;
+					});
+				}
+			});
+			/**
+			 * Android返回键处理（IOS只能通过home键来杀掉程序）
+			 * 返回逻辑：一秒内连续点击两次，退出程序；
+			 * 这个官方已经写的很明白了，这里需要加上这一段代码，防止返回到入口页面；
+			 * http://www.html5plus.org/doc/zh_cn/runtime.html#plus.runtime.quit
+			 */
+			var first = null;
+			mui.back = function() {
+				if (!first) {
+					first = new Date().getTime();
+					plus.nativeUI.toast("再按一次退出应用");
+					setTimeout(function() {
+						first = null;
+					}, 1000);
+				} else {
+					if (new Date().getTime() - first < 1000) {
+						plus.runtime.quit();
+					}
+				}
+			}
+		</script>
+	</body>
+
+</html>

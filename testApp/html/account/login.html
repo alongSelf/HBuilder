@@ -1,0 +1,107 @@
+<!--
+	作者：Trust
+	时间：2015-12-21
+	描述：登录页面
+-->
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<title>登录</title>
+		<link href="../../css/mui.min.css" rel="stylesheet" />
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+			<h1 class="mui-title">登录</h1>
+		</header>
+		<div class="mui-content">
+			<form class="mui-input-group">
+				<div class="mui-input-row">
+					<label>手机号：</label>
+					<input class="mui-input-clear" id="userPhone" type="text">
+				</div>
+				<div class="mui-input-row">
+					<label>密码：</label>
+					<input class="mui-input-clear" id="userPassword" type="password">
+				</div>
+				<div class="mui-button-row">
+					<button class="mui-btn mui-btn-blue" id="loginApp" type="button">登录</button>
+				</div>
+			</form>
+		</div>
+		<script src="../../js/mui.min.js"></script>
+		<script type="text/javascript" charset="utf-8">
+			mui.init();
+			mui.plusReady(function() {
+				var self = plus.webview.currentWebview();
+				var entrance = self.entrance;
+				/**
+				 * 点击登录按钮，进行登录；
+				 * trim()方法是mui.js提供的，js本身并没有trim()方法；
+				 * 许多新手在这里会出现一些问题，就是并不是在事件发生时候去获取手机号和密码，而是在事件外去获取；
+				 * 在事件外获取的值，并不是最后点击提交时候的值，获取的永远是input框初始化的值，而不是它变化后的值；
+				 */
+				document.getElementById("loginApp").addEventListener("tap", function() {
+					var uphone = document.getElementById("userPhone").value.trim();
+					var upwd = document.getElementById("userPassword").value.trim();
+					// 其实这里还要对手机号密码进行一些格式的验证，此次先略过；
+					loginByPhone(uphone, upwd, entrance);
+				});
+			});
+
+			function loginByPhone(uphone, upwd, entrance) { //调用登录接口
+				mui.ajax({
+					type: "get",
+					url: "../../json/account/login.json",
+					async: true,
+					data: {
+						uphone: uphone,
+						upassword: upwd
+					},
+					dataType: "json",
+					timeout: 1000,
+					success: function(data) {
+						if (data.status == "1") {
+							var obj = data.result;
+							var str = JSON.stringify(obj);
+							/**
+							 * 通过键值对形式，存储字符串；
+							 * http://www.html5plus.org/doc/zh_cn/storage.html#plus.storage.setItem
+							 */
+							plus.storage.setItem("userInfo", str);
+							// 根据入口不同，进行的操作也不同，具体参数在两个入口处都有区分
+							if (entrance == "user") {
+								/**
+								 * 通过窗口id获取窗口对象
+								 * http://www.html5plus.org/doc/zh_cn/webview.html#plus.webview.getWebviewById
+								 */
+								var user = plus.webview.getWebviewById("user.html");
+								/**
+								 * 通过mui.fire()触发窗口对象的自定义事件，开启等待框；
+								 * http://dev.dcloud.net.cn/mui/event/#customevent
+								 * http://www.html5plus.org/doc/zh_cn/nativeui.html#plus.nativeUI.showWaiting
+								 */
+								plus.nativeUI.showWaiting();
+								mui.fire(user, "userLogin", {
+									userName: obj.uname,
+									userId: obj.userid,
+									userImage: obj.uimage
+								});
+							} else {
+								mui.back();
+							}
+						}
+					},
+					error: function(xhr, type, errorThrown) {
+						plus.nativeUI.toast(errorThrown);
+					}
+				});
+			}
+		</script>
+	</body>
+
+</html>

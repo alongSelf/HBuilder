@@ -1,0 +1,184 @@
+<!--
+	作者：Trust
+	时间：2015-12-26
+	描述：付款页
+-->
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<title>本此订单</title>
+		<link href="../../css/mui.min.css" rel="stylesheet" />
+		<style type="text/css">
+			.mui-btn-block {
+				width: 80%;
+				border: none;
+				left: 10%;
+			}
+		</style>
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+			<h1 class="mui-title">订单</h1>
+		</header>
+		<nav class="mui-bar mui-bar-tab">
+			<button class="mui-btn mui-btn-red mui-btn-block" id="payment" type="button">我要付款</button>
+		</nav>
+		<div class="mui-content">
+			<ul class="mui-table-view">
+				<li class="mui-table-view-cell">
+					<span>姓名：</span><span id="uname"></span>
+				</li>
+				<li class="mui-table-view-cell">
+					<span>电话：</span><span id="uphone"></span>
+				</li>
+				<li class="mui-table-view-cell">
+					<span>地址：</span><span id="uaddress"></span>
+				</li>
+				<li class="mui-table-view-cell">
+					<span>总价：</span><span id="totalPrice"></span>
+				</li>
+			</ul>
+			<ul class="mui-table-view" id="myOrder">
+				<!--<li class="mui-table-view-cell mui-media">
+					<a href="javascript:;">
+						<img class="mui-media-object mui-pull-left" src="">
+						<div class="mui-media-body">
+							<span>商品名称</span>
+							<span class="mui-pull-right">商品总数</span>
+							<p class="mui-ellipsis">商品价格</p>
+						</div>
+					</a>
+				</li>-->
+			</ul>
+		</div>
+		<script src="../../js/mui.min.js"></script>
+		<script type="text/javascript" charset="utf-8">
+			mui.init();
+			mui.plusReady(function() {
+				// 从本地存储中，获取用户的基本信息
+				var userInfo = plus.storage.getItem("userInfo");
+				var user = JSON.parse(userInfo);
+				document.getElementById("uname").innerHTML = user.uname;
+				document.getElementById("uphone").innerHTML = user.uphone;
+				document.getElementById("uaddress").innerHTML = user.uaddress;
+				
+				// 获取传递过来的已选商品信息，以及总价
+				var self = plus.webview.currentWebview();
+				var productList = self.productList;
+				var totalPrice = self.totalPrice;
+				document.getElementById("totalPrice").innerHTML = totalPrice;
+				getMyOrder(productList);
+				
+				/*
+				 * 获取支付通道，官方有示例代码的
+				 * http://www.html5plus.org/doc/zh_cn/payment.html#plus.payment.getChannels
+				 */
+				plus.payment.getChannels(function(channels) {
+					for (var i in channels) {
+						if (channels[i].id == "alipay") {
+							channelObj = channels[i];
+							break;
+						}
+					}
+					checkServices(channelObj);
+				}, function(e) {
+					console.log("获取支付通道失败：" + e.message);
+				});
+				
+				// 用户支付
+				document.getElementById("payment").addEventListener("tap",function(){
+					// 将后台所需信息，拼接成对象格式
+					var userName = document.getElementById("uname").innerHTML;
+					var userPhone = document.getElementById("uphone").innerHTML;
+					var userAddress = document.getElementById("uaddress").innerHTML;
+					var orderJson = {
+						userName: userName,
+						userPhone: userPhone,
+						userAddress: userAddress,
+						orderList: productList,
+						totalPrice: totalPrice
+					};
+					paymentOrder(orderJson, channelObj);
+				});
+			});
+
+			function getMyOrder(list) { //本次购物商品信息
+				/*
+				 * 其实实际项目中，结算的时候，商品也是可以进行增减操作的
+				 * 在下的实际项目中由于是第一版，并没有做这个功能，此功能大家可以根据上一张页面自行扩展咯
+				 */
+				var myOrder = document.getElementById("myOrder");
+				var content = "";
+				for (var i = 0, len = list.length; i < len; i++) {
+					content += '<li class="mui-table-view-cell mui-media">' +
+						'<a href="javascript:;"><img class="mui-media-object mui-pull-left" src="' + list[i].productImage + '">' +
+						'<div class="mui-media-body"><span>' + list[i].productName + '</span><span class="mui-pull-right">' + list[i].productNum + '</span>' +
+						'<p class="mui-ellipsis">' + list[i].productPrice + '</p></div></a></li>';
+				}
+				myOrder.innerHTML = content;
+			}
+
+			function checkServices(channel) { //检测是否安装支付服务
+				// http://www.html5plus.org/doc/zh_cn/payment.html#plus.payment.PaymentChannel
+				if (!channel.serviceReady) {
+					var txt = null;
+					switch (channel.id) {
+						case "alipay":
+							txt = "检测到系统未安装“支付宝快捷支付服务”，无法完成支付操作，是否立即安装？";
+							break;
+						default:
+							txt = "系统未安装“" + channel.description + "”服务，无法完成支付，是否立即安装？";
+							break;
+					}
+					plus.nativeUI.confirm(txt, function(e) {
+						if (e.index == 0) {
+							channel.installService();
+						}
+					}, channel.description);
+				}
+			}
+			
+			function paymentOrder(orderJson, channelObj) { //支付订单
+				/* 
+				 * 这里只有支付宝的简单示例，微信支付在下目前没有做过，囧
+				 * 其实支付这个功能，主要工作在后台，可以找支付宝的技术获取部分语言的源码，以及支付宝接口的文档
+				 * 后台阅读文档后，会规定一些所必要的数据，我们会按照后台的要求，将数据拼接完成，传输到后台
+				 * 后台根据这些数据，请求支付宝的接口后，会返回一个statement参数，也就是这个订单的唯一信息
+				 * 我们再拿到这个statement参数，调用html5+的支付模块，调用本地的支付宝进行支付
+				 */
+				// 将对象序列化成json字符串，后台获取后在反序列化，根据属性值取相应的值
+				var orderCode = JSON.stringify(orderJson);
+				mui.ajax({
+					type: "get",//具体项目中，我们用的是post方式，这里只是做一个示例
+					url:"../../json/order/userOrder.json",//后台生成订单的那个接口
+					data:{
+						orderCode:orderCode
+					},
+					dataType:"json",
+					success:function(data){
+						if (data.status=="1"){
+							var statement = data.orderStatement;
+							// http://www.html5plus.org/doc/zh_cn/payment.html#plus.payment.request
+							plus.payment.request(channelObj, statement, function(result) {
+								// 支付成功后，继续执行后续的操作
+								plus.nativeUI.toast("支付成功");
+							}, function(e) {
+								console.log(JSON.stringify(e));
+								plus.nativeUI.toast("取消支付");
+							});
+						}
+					},
+					error: function(xhr, type, errorThrown) {
+						console.log(errorThrown);
+					}
+				});
+			}
+		</script>
+	</body>
+
+</html>

@@ -1,0 +1,32 @@
+{
+	"status": 1,
+	"message": "获取商店详细信息成功",
+	"result": [
+		{
+			"productId": 1,
+			"productName": "商品01",
+			"productPrice": "0.5",
+			"productImage": "../../image/product.jpg"
+		}, {
+			"productId": 2,
+			"productName": "商品02",
+			"productPrice": "1.5",
+			"productImage": "../../image/product.jpg"
+		}, {
+			"productId": 3,
+			"productName": "商品03",
+			"productPrice": "1.0",
+			"productImage": "../../image/product.jpg"
+		}, {
+			"productId": 4,
+			"productName": "商品04",
+			"productPrice": "2.5",
+			"productImage": "../../image/product.jpg"
+		}, {
+			"productId": 5,
+			"productName": "商品05",
+			"productPrice": "2.0",
+			"productImage": "../../image/product.jpg"
+		}
+	]
+}
